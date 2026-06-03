@@ -241,11 +241,23 @@ if page == "🏠 Dashboard":
         
     st.markdown("---")
     st.subheader("🛣️ Startup Roadmap")
-    st.write("✅ Phase 1 - MVP Development")
-    st.write("⬜ Phase 2 - Multi-Agent AI")
-    st.write("⬜ Phase 3 - Hospital Platform")
-    st.write("⬜ Phase 4 - Enterprise SaaS")
-    st.write("⬜ Phase 5 - Global Expansion")
+   # 1. State Initialize
+    if 'phases' not in st.session_state:
+        st.session_state.phases = {
+          "Phase 1 - MVP Development": True,
+          "Phase 2 - Multi-Agent AI": True,
+        "Phase 3 - Hospital Platform": True,
+        "Phase 4 - Enterprise SaaS": True,
+        "Phase 5 - Global Expansion": False
+    }
+
+# 2. Dynamic Loop
+    for phase, status in st.session_state.phases.items():
+        if status:
+         st.write(f"✅ {phase}")
+        else:
+         st.write(f"⬜ {phase}")
+
 
 # ----------------------------------------------------------------------
 # [MODULE 2]: 🤖 TRUE AI AGENT INTERFACE

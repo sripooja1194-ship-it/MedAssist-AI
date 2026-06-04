@@ -208,10 +208,9 @@ with st.sidebar:
 if page == "🏠 Dashboard":
     st.markdown("<h1 style='font-size:80px; font-weight:900;'>🏥 MedAssist AI</h1>", unsafe_allow_html=True)
     st.markdown("<p style='font-size:28px; color:gray;'>Your Intelligent Healthcare Assistant</p>", unsafe_allow_html=True)
-    
     st.info("Designed for doctors, nurses, pharmacists, students, hospitals, clinics and healthcare professionals.")
     
-    # Metrics System Grid
+    # Metrics System
     col1, col2, col3, col4 = st.columns(4)
     with col1: st.metric("Target Users", "1000+")
     with col2: st.metric("AI Modules", "16")
@@ -220,15 +219,33 @@ if page == "🏠 Dashboard":
     
     st.markdown("---")
     
-    # Target User Badges
+    # [FIXED] Target User Badges Section
+    st.markdown("""
+        <style>
+        .custom-box {
+            background-color: #004d26 !important;
+            color: white !important;
+            padding: 10px 5px !important;
+            border-radius: 8px !important;
+            text-align: center !important;
+            height: 70px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-weight: bold !important;
+            font-size: 13px !important;
+            margin: 5px !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
     st.subheader("👥 Target Users")
-    c1, c2, c3, c4, c5 = st.columns(5)
-    with c1: st.success("Doctors")
-    with c2: st.success("Nurses")
-    with c3: st.success("Pharmacists")
-    with c4: st.success("Students")
-    with c5: st.success("Hospitals")
-    
+    cols = st.columns(6)
+    user_list = ["Doctors", "Nurses", "Pharmacists", "Students", "Hospitals", "Pharma Companies"]
+
+    for i, name in enumerate(user_list):
+        cols[i].markdown(f'<div class="custom-box">{name}</div>', unsafe_allow_html=True)
+        
     # Clinical Cards Display
     st.subheader("🚀 Core AI Modules")
     row1_1, row1_2, row1_3 = st.columns(3)

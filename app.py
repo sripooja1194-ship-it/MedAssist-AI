@@ -322,7 +322,7 @@ Follow this exact structure:
 5. **Pharmacokinetics:** (Briefly mention absorption/half-life if available)
 6. **Common Side Effects:**
 7. **Other Potential Side Effects:**
-8. **Drug-Drug Interactions:**
+8. **Drug-Interactions:**
 9. **Warnings:**
 10. **Contraindications:**
 11. **Special Precautions:**

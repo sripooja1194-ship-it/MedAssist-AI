@@ -311,7 +311,31 @@ elif page == "💊 Drug Information":
             with st.spinner("Searching database..."):
                 try:
                     client = Groq(api_key=GROQ_API_KEY)
-                    prompt = f"Provide a complete clinical pharmacology report for: {clean_drug}. Include Category, Uses, Side Effects, and Warnings. If it's not a real drug, say 'not found'."
+                    prompt = f"""
+You are an expert Clinical Pharmacist. Provide a comprehensive clinical pharmacology report for the generic salt: '{clean_drug}'.
+
+Follow this exact structure:
+1. **Introduction:** A brief overview of the medication.
+2. **Clinical Pharmacology Category:**
+3. **Uses:** (Bullet points of symptoms or conditions treated)
+4. **Mechanism of Action:** (Explain how it works, if possible, split by active components)
+5. **Pharmacokinetics:** (Briefly mention absorption/half-life if available)
+6. **Common Side Effects:**
+7. **Other Potential Side Effects:**
+8. **Drug-Drug Interactions:**
+9. **Warnings:**
+10. **Contraindications:**
+11. **Special Precautions:**
+12. **Pregnancy & Lactation Safety:**
+13. **Dosage & Administration:**
+
+---
+CRITICAL SAFETY RULE:
+- If the input is a Brand Name, please identify it IF AND ONLY IF you are 100% certain of its composition. 
+- If you are unsure or the brand is ambiguous, DO NOT GUESS. Simply output: "Brand identification not verified. For accurate results, please search using the 'Generic Salt' name (found on your medicine strip)."
+- Always add this note at the end: "NOTE: Searching by Generic Salt name is more accurate for clinical reference. Always verify the salt composition on your medicine strip."
+- If the input is not a recognized medicine at all, strictly output: 'not found'.
+"""
                     response = client.chat.completions.create(
                         model="llama-3.3-70b-versatile",
                         messages=[{"role": "user", "content": prompt}],

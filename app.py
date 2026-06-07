@@ -311,30 +311,7 @@ elif page == "💊 Drug Information":
             with st.spinner("Searching database..."):
                 try:
                     client = Groq(api_key=GROQ_API_KEY)
-                   prompt = f"""
-You are an expert Clinical Pharmacist Agent. Provide a comprehensive clinical pharmacology report for: '{clean_drug}'.
-
-Follow this exact structure:
-1. **Introduction:** A brief overview of the medicine/salt and what it is used for.
-2. **Clinical Pharmacology Category:**
-3. **Uses:**
-4. **Mechanism of Action:**
-5. **Common Side Effects:** (List of typical side effects)
-6. **Other Potential Side Effects:** (Less common or severe reactions)
-7. **Drug-Drug Interactions:** (Common interactions to avoid)
-8. **Warnings:**
-9. **Contraindications:**
-10. **Special Precautions:**
-11. **Pregnancy & Lactation Safety:**
-12. **Dosage & Administration:**
-
----
-CRITICAL SAFETY NOTE:
-- If the input is a Brand Name, please identify its composition (Salt).
-- ALWAYS VERIFY the salt composition printed on your medicine strip. This AI provides information based on Generic Salts, and if the salt identification is not 100% accurate, the clinical information may not be correct for your specific brand. 
-- Please note that searching by 'Generic Salt name' is more accurate for clinical reference.
-- If the input is not a recognized medicine, strictly output: 'not found'.
-"""
+                    prompt = f"Provide a complete clinical pharmacology report for: {clean_drug}. Include Category, Uses, Side Effects, and Warnings. If it's not a real drug, say 'not found'."
                     response = client.chat.completions.create(
                         model="llama-3.3-70b-versatile",
                         messages=[{"role": "user", "content": prompt}],

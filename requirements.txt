@@ -5,3 +5,6 @@ pillow
 pypdf
 pandas
 openpyxl
+firebase-admin
+pyrebase4
+flask

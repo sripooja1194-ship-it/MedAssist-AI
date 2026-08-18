@@ -1,14 +1,22 @@
-import json
 import streamlit as st
 import firebase_admin
-from firebase_admin import credentials, initialize_app, firestore
+from firebase_admin import credentials, firestore
 
-# Check karo agar Firebase pehle se initialize nahi hai
 if not firebase_admin._apps:
-    # Streamlit secrets se sirf FIREBASE_JSON load karenge
-    key_dict = json.loads(st.secrets["FIREBASE_JSON"])
-    cred = credentials.Certificate(key_dict)
-    initialize_app(cred)
+    # Secrets se direct access
+    cred = credentials.Certificate({
+        "type": st.secrets["type"],
+        "project_id": st.secrets["project_id"],
+        "private_key_id": st.secrets["private_key_id"],
+        "private_key": st.secrets["private_key"].replace("\\n", "\n"),
+        "client_email": st.secrets["client_email"],
+        "client_id": st.secrets["client_id"],
+        "auth_uri": st.secrets["auth_uri"],
+        "token_uri": st.secrets["token_uri"],
+        "auth_provider_x509_cert_url": st.secrets["auth_provider_x509_cert_url"],
+        "client_x509_cert_url": st.secrets["client_x509_cert_url"],
+        "universe_domain": st.secrets["universe_domain"]
+    })
+    firebase_admin.initialize_app(cred)
 
-# Asli Firestore client jo aapke baaki code (.collection wali queries) ke sath 100% chalega
 db = firestore.client()

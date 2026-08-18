@@ -1,6 +1,9 @@
 import streamlit as st
 from groq import Groq
 import google.generativeai as genai
+from firebase_auth import login, signup
+import firebase_admin
+from firebase_admin import firestore
 from PIL import Image
 from pypdf import PdfReader
 import pandas as pd
@@ -17,6 +20,176 @@ st.set_page_config(
     page_icon="🏥",
     layout="wide"
 )
+
+# --------------------------------------------------
+# LOGIN SESSION
+# --------------------------------------------------
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+if "user_email" not in st.session_state:
+    st.session_state.user_email = ""
+
+if "user_id" not in st.session_state:
+    st.session_state.user_id = ""    
+
+# ---------------- LOGIN / SIGNUP SCREEN ----------------
+
+if not st.session_state.logged_in:
+
+    st.title("🏥 MedAssist AI")
+    st.subheader("Login / Create Account")
+
+    option = st.radio(
+        "Choose an option",
+        ["Login", "Sign Up"],
+        horizontal=True
+    )
+
+    email = st.text_input("Email")
+    password = st.text_input(
+        "Password",
+        type="password"
+    )
+
+    if option == "Login":
+
+        if st.button("Login", type="primary"):
+
+            result = login(email, password)
+
+            if result and "idToken" in result:
+
+                st.session_state.logged_in = True
+                st.session_state.user_email = email
+                st.session_state.user_id = result["localId"]
+
+                st.success("✅ Login Successful!")
+                st.rerun()
+
+            else:
+
+                error_message = (
+                    result.get("error", {})
+                    .get("message", "Login Failed")
+                    if result
+                    else "No response received"
+                )
+
+                st.error(f"❌ {error_message}")
+
+    else:
+
+        if st.button("Create Account", type="primary"):
+
+            result = signup(email, password)
+
+            if result and "idToken" in result:
+
+                st.success("✅ Account Created Successfully!")
+
+            elif result:
+
+                error_message = (
+                    result.get("error", {})
+                    .get("message", "Signup Failed")
+                )
+
+                st.error(f"❌ {error_message}")
+
+            else:
+
+                st.error("❌ signup() returned no response")
+
+    st.stop()
+
+# --------------------------------------------------
+# CURRENT USER FIRESTORE DATA
+# --------------------------------------------------
+
+from firebase_config import db
+
+user_data = None
+
+if st.session_state.user_id:
+
+    try:
+        user_ref = db.collection("users").document(
+            st.session_state.user_id
+        )
+
+        user_doc = user_ref.get()
+
+        if user_doc.exists:
+            user_data = user_doc.to_dict()
+
+    except Exception as e:
+        st.error(f"Firestore Error: {e}")
+
+        # --------------------------------------------------
+# CURRENT USER PLAN
+# --------------------------------------------------
+
+user_plan = "Free"
+
+if user_data:
+    user_plan = user_data.get("plan", "Free")
+
+# --------------------------------------------------
+# CURRENT USER ROLE
+# --------------------------------------------------
+
+user_role = "user"
+
+if user_data:
+    user_role = str(
+        user_data.get("role", "user")
+    ).strip().lower()
+
+is_admin = user_role == "admin"    
+
+# Normalize plan value
+user_plan = str(user_plan).strip().lower()
+
+# ---------------- SIDEBAR USER INFO ----------------
+
+with st.sidebar:
+
+    st.markdown("---")
+    st.markdown("### 👤 Account")
+
+    if user_data:
+
+        st.caption(
+            f"📧 {user_data.get('email', 'N/A')}"
+        )
+
+        if user_plan == "free":
+
+            st.caption("🆓 Plan: FREE")
+
+        else:
+
+            st.caption("💎 Plan: PREMIUM")
+
+    else:
+
+        st.caption("⚠️ User data not found")
+
+# ---------------- AFTER LOGIN ----------------
+
+st.success(f"Welcome, {st.session_state.user_email}!")
+
+st.write("🎉 MedAssist AI Dashboard")
+
+if st.button("Logout"):
+
+    st.session_state.logged_in = False
+    st.session_state.user_email = ""
+    st.session_state.user_id = ""
+
+
+    st.rerun()
 
 # ----------------------------------------------------------------------
 # 2. AUTOMATIC API KEY FETCH
@@ -154,58 +327,235 @@ with st.sidebar:
         unsafe_allow_html=True
     )
     
-    st.markdown("### 🧭 Navigation")
     
+     # --------------------------------------------------
+# NAVIGATION
+# --------------------------------------------------
+
+# --------------------------------------------------
+# FREE FEATURES
+# --------------------------------------------------
+
+free_features = [
+    "🏠 Dashboard",
+    "🤖 AI Assistant",
+    "💊 Drug Information",
+    "🎓 Education Hub",
+    "🧮 Healthcare Calculators",
+]
+
+
+# --------------------------------------------------
+# PREMIUM FEATURES
+# --------------------------------------------------
+
+premium_features = [
+    "📄 Prescription Analyzer",
+    "⚠️ Drug Interaction Checker",
+    "🩺 Nursing Assistant",
+    "📚 Medical Reports",
+    "🔬 Research Assistant",
+    "🏥 Hospital Dashboard",
+    "📋 SOP Generator",
+]
+   
+
+# Admin and Premium users get all features
+# Admin OR Premium users get all features
+if is_admin or str(user_plan).strip().lower() == "premium":
+
+    available_features = (
+        free_features
+        + premium_features
+    )
+
+else:
+
+    available_features = free_features
+
+
+# --------------------------------------------------
+# SIDEBAR NAVIGATION
+# --------------------------------------------------
+
+with st.sidebar:
+
+    st.markdown("### 🧭 Navigation")
+
+    if "page" not in st.session_state:
+        st.session_state.page = "🏠 Dashboard"
+
     page = st.radio(
         label="Go to select layout:",
-        options=[
-            "🏠 Dashboard",
-            "🤖 AI Assistant",
-            "💊 Drug Information",
-            "📄 Prescription Analyzer",
-            "⚠️ Drug Interaction Checker",
-            "🩺 Nursing Assistant",
-            "📚 Medical Reports",
-            "🎓 Education Hub",
-            "🔬 Research Assistant",
-            "🧮 Healthcare Calculators",
-            "🏥 Hospital Dashboard",
-            "📋 SOP Generator",
-            "⚙️ Settings"
-        ],
+        options=available_features,
         label_visibility="collapsed"
     )
-    
+
+    # --------------------------------------------------
+    # SETTINGS
+    # --------------------------------------------------
+
+    if st.button(
+        "⚙️ Settings",
+        use_container_width=True
+    ):
+        page = "⚙️ Settings"
+
+    # --------------------------------------------------
+    # PREMIUM UPGRADE BUTTON
+    # --------------------------------------------------
+
+    if user_plan == "free" and not is_admin:
+
+        if st.button(
+            "🚀 Upgrade to Premium",
+            type="primary",
+            use_container_width=True
+        ):
+              page = "💎 Upgrade to Premium"
+
+        # --------------------------------------------------
+        # LOCKED PREMIUM FEATURES
+        # --------------------------------------------------
+
+        st.markdown("---")
+
+        st.markdown("### 🔒 Premium Features")
+
+        for feature in premium_features:
+            st.caption(f"🔒 {feature}")
+
+        st.info(
+            "🚀 Upgrade to Premium to unlock "
+            "all advanced healthcare modules."
+        )
+
+    # --------------------------------------------------
+    # DOWNLOAD BUTTON
+    # --------------------------------------------------
+
     st.markdown("---")
 
-    # Download Button Logic
     st.download_button(
         label="📥 Download Latest Analysis",
-        data=st.session_state.final_report if st.session_state.final_report else "No analysis generated yet.",
+        data=(
+            st.session_state.final_report
+            if st.session_state.final_report
+            else "No analysis generated yet."
+        ),
         file_name="MedAssist_Analysis.txt",
         mime="text/plain",
-        # Agar final_report empty hai, toh button disabled rahega
-        disabled=not st.session_state.final_report 
-    )
-    
-    st.markdown("---")
-    
-    st.markdown("### ⚠️ Medical Disclaimer")
-    st.caption(
-        "MedAssist AI provides information for educational purposes only. "
-        "It is not a substitute for professional medical advice, diagnosis, or treatment. "
-        "Always consult with a qualified healthcare provider."
-    )
-    
-    st.markdown("---")
-    st.caption(
-        "MedAssist AI © 2026 | Healthcare Intelligence Platform | Built by Pooja Srivastava"
+        disabled=not st.session_state.final_report
     )
 
+    # --------------------------------------------------
+    # MEDICAL DISCLAIMER
+    # --------------------------------------------------
+
+    st.markdown("---")
+
+    st.markdown("### ⚠️ Medical Disclaimer")
+
+    st.caption(
+        "MedAssist AI provides information for educational purposes only. "
+        "It is not a substitute for professional medical advice, diagnosis, "
+        "or treatment. Always consult with a qualified healthcare provider."
+    )
+
+    st.markdown("---")
+
+    st.caption(
+        "MedAssist AI © 2026 | Healthcare Intelligence Platform | "
+        "Built by Pooja Srivastava"
+    )
+
+
+# --------------------------------------------------
+# PREMIUM UPGRADE PAGE
+# --------------------------------------------------
+
+if page == "💎 Upgrade to Premium":
+
+    st.title("🚀 Upgrade to MedAssist AI Premium")
+
+    st.markdown(
+        "### Unlock Advanced Healthcare Intelligence"
+    )
+
+    st.write(
+        "Upgrade to Premium to unlock advanced "
+        "healthcare modules designed for deeper "
+        "clinical analysis and workflow support."
+    )
+
+    st.markdown("---")
+
+    st.markdown("### 💎 Premium Features")
+
+    premium_display_features = [
+        "📄 Prescription Analyzer",
+        "⚠️ Drug Interaction Checker",
+        "🩺 Nursing Assistant",
+        "📚 Medical Reports",
+        "🔬 Research Assistant",
+        "🏥 Hospital Dashboard",
+        "📋 SOP Generator",
+    ]
+
+    for feature in premium_display_features:
+        st.markdown(f"✓ {feature}")
+
+    st.markdown("---")
+
+    st.markdown("### ⭐ Premium Plan")
+
+    st.markdown(
+        "**Get access to all advanced MedAssist AI features.**"
+    )
+
+    st.link_button(
+    "💳 Continue to Payment",
+    "https://rzp.io/rzp/lbVstrxZ",
+    type="primary",
+    use_container_width=True
+)
+
+ # --------------------------------------------------
+    # PAYMENT SECTION
+    # --------------------------------------------------
+
+    if st.session_state.get("show_payment", False):
+
+        st.markdown("---")
+
+        st.subheader("💳 Premium Subscription")
+
+        st.success(
+            "🎉 You are one step away from MedAssist AI Premium!"
+        )
+
+        st.markdown("### ⭐ Premium Plan")
+
+        st.markdown(
+            "**All Advanced Healthcare Modules**"
+        )
+
+        st.markdown("💰 Price: Coming Soon")
+
+        st.info(
+            "Secure online payment will be available soon. "
+            "Your Premium plan will be activated automatically "
+            "after successful payment."
+        )
+
+        if st.button("⬅️ Back to Premium Details"):
+            st.session_state.show_payment = False
+            st.rerun()
+                    
 # ----------------------------------------------------------------------
 # [MODULE 1]: 🏠 DASHBOARD INTERFACE
 # ----------------------------------------------------------------------
-if page == "🏠 Dashboard":
+elif page == "🏠 Dashboard":
     st.markdown("<h1 style='font-size:80px; font-weight:900;'>🏥 MedAssist AI</h1>", unsafe_allow_html=True)
     st.markdown("<p style='font-size:28px; color:gray;'>Your Intelligent Healthcare Assistant</p>", unsafe_allow_html=True)
     st.info("Designed for doctors, nurses, pharmacists, students, hospitals, clinics and healthcare professionals.")

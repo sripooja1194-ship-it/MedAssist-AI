@@ -1,13 +1,9 @@
-import json
-import streamlit as st
-from firebase_admin import credentials, initialize_app, firestore
+import firebase_admin
+from firebase_admin import credentials, firestore
 
-if not st.session_state.get('firebase_initialized', False):
-    # Secrets se direct raw JSON string uthakar parse kar rahe hain
-    key_dict = json.loads(st.secrets["FIREBASE_JSON"])
-
-    cred = credentials.Certificate(key_dict)
-    initialize_app(cred)
-    st.session_state['firebase_initialized'] = True
+# Agar pehle se initialize nahi hai tabhi karein
+if not firebase_admin._apps:
+    cred = credentials.ApplicationDefault()
+    firebase_admin.initialize_app(cred)
 
 db = firestore.client()

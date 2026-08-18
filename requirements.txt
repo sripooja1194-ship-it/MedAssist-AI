@@ -1,4 +1,4 @@
-sstreamlit
+streamlit
 groq
 google-generativeai
 pillow
@@ -6,6 +6,4 @@ pypdf
 pandas
 openpyxl
 firebase-admin
-pyrebase4
-flask
 requests

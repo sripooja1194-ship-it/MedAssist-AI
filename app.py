@@ -219,7 +219,7 @@ def query_groq_ai(system_instruction, user_prompt):
     try:
         client = Groq(api_key=GROQ_API_KEY)
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile", 
+            model="openai/gpt-oss-120b", 
             messages=[
                 {"role": "system", "content": system_instruction},
                 {"role": "user", "content": user_prompt}
@@ -263,7 +263,7 @@ def run_medassist_agent(user_medical_goal):
         """
         
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile", 
+            model="openai/gpt-oss-120b", 
             messages=[
                 {"role": "system", "content": agent_system_prompt},
                 {"role": "user", "content": user_medical_goal}
@@ -687,7 +687,7 @@ CRITICAL SAFETY RULE:
 - If the input is not a recognized medicine at all, strictly output: 'not found'.
 """
                     response = client.chat.completions.create(
-                        model="llama-3.3-70b-versatile",
+                        model="openai/gpt-oss-120b",
                         messages=[{"role": "user", "content": prompt}],
                         temperature=0.0
                     )
@@ -957,6 +957,8 @@ elif page == "📚 Medical Reports":
                             if not pdf_text.strip():
                                 pdf_text = "No extractable text found in PDF."
 
+
+                            
                             response = gemini_model.generate_content(
                                 f"""
                                 You are MedAssist Pathology AI Agent.
@@ -981,6 +983,7 @@ elif page == "📚 Medical Reports":
                                 """
                             )
 
+                            
                             final_report += f"""
 📄 FILE: {file.name}
 {response.text}

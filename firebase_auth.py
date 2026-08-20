@@ -42,4 +42,13 @@ def login(email, password):
     }
 
     response = requests.post(url, json=payload)
-    return response.json()
+    result = response.json()
+
+    # Save Firebase authentication information
+    if "localId" in result:
+        st.session_state.user_id = result["localId"]
+
+    if "idToken" in result:
+        st.session_state.firebase_id_token = result["idToken"]
+
+    return result

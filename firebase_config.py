@@ -1,13 +1,16 @@
 import firebase_admin
 from firebase_admin import credentials, firestore
 import streamlit as st
+import json
 
-# अगर पहले से ऐप इनिशियलाइज नहीं है, तो करें
+# Agar pehle se app initialize nahi hai, toh secrets ka use karke karein
 if not firebase_admin._apps:
-    # (ध्यान दें: आपके पास serviceAccountKey.json फाइल होनी चाहिए, 
-    # जिसे आप Firebase Console -> Project Settings -> Service Accounts से डाउनलोड करती हैं)
-    cred = credentials.Certificate("serviceAccountKey.json")
+    # Streamlit secrets se Firebase credentials ko dictionary mein convert karein
+    firebase_secrets = dict(st.secrets["FIREBASE"])
+    
+    # Certificate ko file ki jagah direct dictionary pass karein
+    cred = credentials.Certificate(firebase_secrets)
     firebase_admin.initialize_app(cred)
 
-# सीधा ऑफिशियल Firestore क्लाइंट
+# Firestore client initialize karein
 db = firestore.client()

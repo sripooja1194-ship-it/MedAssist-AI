@@ -20,10 +20,10 @@ st.set_page_config(
     page_icon="🏥",
     layout="wide"
 )
-
 # --------------------------------------------------
 # LOGIN SESSION
 # --------------------------------------------------
+
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
@@ -31,7 +31,7 @@ if "user_email" not in st.session_state:
     st.session_state.user_email = ""
 
 if "user_id" not in st.session_state:
-    st.session_state.user_id = ""    
+    st.session_state.user_id = ""
 
 # ---------------- LOGIN / SIGNUP SCREEN ----------------
 
@@ -63,6 +63,18 @@ if not st.session_state.logged_in:
                 st.session_state.logged_in = True
                 st.session_state.user_email = email
                 st.session_state.user_id = result["localId"]
+                
+                # Firestore check aur auto-create logic for Login
+                from firebase_config import db
+                user_ref = db.collection("users").document(result["localId"])
+                user_doc = user_ref.get()
+                
+                if not user_doc.exists:
+                    user_ref.set({
+                        "email": email,
+                        "role": "user",
+                        "plan": "free"
+                    })
 
                 st.success("✅ Login Successful!")
                 st.rerun()
@@ -86,7 +98,15 @@ if not st.session_state.logged_in:
 
             if result and "idToken" in result:
 
-                st.success("✅ Account Created Successfully!")
+                from firebase_config import db
+                new_user_id = result["localId"]
+                db.collection("users").document(new_user_id).set({
+                    "email": email,
+                    "role": "user",
+                    "plan": "free"
+                })
+
+                st.success("✅ Account Created Successfully! You can now login.")
 
             elif result:
 
@@ -104,52 +124,46 @@ if not st.session_state.logged_in:
     st.stop()
 
 # --------------------------------------------------
-# CURRENT USER FIRESTORE DATA
+# CURRENT USER FIRESTORE DATA (FIXED PLACEMENT)
 # --------------------------------------------------
 
 from firebase_config import db
 
 user_data = None
 
-if st.session_state.user_id:
-
+if st.session_state.get("user_id"):
     try:
-        user_ref = db.collection("users").document(
-            st.session_state.user_id
-        )
-
+        user_ref = db.collection("users").document(st.session_state.user_id)
         user_doc = user_ref.get()
 
         if user_doc.exists:
             user_data = user_doc.to_dict()
+        else:
+            # Agar document nahi mila toh turant ek default document create kar do taaki error na aaye
+            user_ref.set({
+                "email": st.session_state.get("user_email", ""),
+                "role": "user",
+                "plan": "free"
+            })
+            user_data = user_ref.get().to_dict()
 
     except Exception as e:
         st.error(f"Firestore Error: {e}")
 
-        # --------------------------------------------------
-# CURRENT USER PLAN
-# --------------------------------------------------
-
-user_plan = "Free"
-
-if user_data:
-    user_plan = user_data.get("plan", "Free")
 
 # --------------------------------------------------
-# CURRENT USER ROLE
+# CURRENT USER PLAN & ROLE
 # --------------------------------------------------
 
+user_plan = "free"
 user_role = "user"
 
 if user_data:
-    user_role = str(
-        user_data.get("role", "user")
-    ).strip().lower()
+    user_plan = str(user_data.get("plan", "free")).strip().lower()
+    user_role = str(user_data.get("role", "user")).strip().lower()
 
 is_admin = user_role == "admin"    
 
-# Normalize plan value
-user_plan = str(user_plan).strip().lower()
 
 # ---------------- SIDEBAR USER INFO ----------------
 
@@ -159,37 +173,25 @@ with st.sidebar:
     st.markdown("### 👤 Account")
 
     if user_data:
-
-        st.caption(
-            f"📧 {user_data.get('email', 'N/A')}"
-        )
-
+        st.caption(f"📧 {user_data.get('email', 'N/A')}")
         if user_plan == "free":
-
             st.caption("🆓 Plan: FREE")
-
         else:
-
             st.caption("💎 Plan: PREMIUM")
-
     else:
-
         st.caption("⚠️ User data not found")
 
 # ---------------- AFTER LOGIN ----------------
 
 st.success(f"Welcome, {st.session_state.user_email}!")
-
 st.write("🎉 MedAssist AI Dashboard")
 
 if st.button("Logout"):
-
     st.session_state.logged_in = False
     st.session_state.user_email = ""
     st.session_state.user_id = ""
-
-
     st.rerun()
+
 
 # ----------------------------------------------------------------------
 # 2. AUTOMATIC API KEY FETCH
